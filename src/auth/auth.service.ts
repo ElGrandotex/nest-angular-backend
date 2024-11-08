@@ -1,14 +1,15 @@
 import { ConflictException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './entities/user.entity';
 import { Model } from 'mongoose';
 
 import * as bcryptjs from 'bcryptjs';
-import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces/jwt-payload';
+import { LoginResponse } from './interfaces/login-response';
+
+import {CreateUserDto, LoginDto, RegisterDto, UpdateAuthDto} from './dto'
+
 
 @Injectable()
 export class AuthService {
@@ -58,7 +59,18 @@ export class AuthService {
 
   }
 
-  async login(loginDto: LoginDto){
+  async register(registerDto: RegisterDto): Promise<LoginResponse>{
+
+    const user = await this.create(registerDto);
+
+    return {
+      user: user,
+      token: this.getJWTToken({id: user._id}) 
+    }
+
+  }
+
+  async login(loginDto: LoginDto): Promise<LoginResponse> {
 
     const {email, password} = loginDto;
 
@@ -79,8 +91,8 @@ export class AuthService {
     }
   }
 
-  findAll() {
-    return `This action returns all auth`;
+  findAll(): Promise<User[]> {
+    return this.userModel.find();
   }
 
   findOne(id: number) {
